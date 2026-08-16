@@ -22,8 +22,8 @@ export default async function DashboardGalleryPage() {
         orderBy: { title: "asc" },
       }),
     ]);
-    photos = fetchedPhotos;
-    events = fetchedEvents;
+    photos = JSON.parse(JSON.stringify(fetchedPhotos));
+    events = JSON.parse(JSON.stringify(fetchedEvents));
   } catch (err) {
     console.warn("Failed fetching gallery in dashboard:", err);
   }

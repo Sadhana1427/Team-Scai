@@ -31,10 +31,10 @@ export default async function DashboardEventsPage() {
       }),
     ]);
 
-    events = evts;
-    categories = cats;
-    tags = tgs;
-    coordinators = users;
+    events = JSON.parse(JSON.stringify(evts));
+    categories = JSON.parse(JSON.stringify(cats));
+    tags = JSON.parse(JSON.stringify(tgs));
+    coordinators = JSON.parse(JSON.stringify(users));
   } catch (err) {
     console.warn("Failed fetching events in dashboard:", err);
   }

@@ -21,8 +21,8 @@ export default async function DashboardTeamPage() {
         orderBy: { displayOrder: "asc" },
       }),
     ]);
-    members = fetchedMembers;
-    categories = fetchedCategories;
+    members = JSON.parse(JSON.stringify(fetchedMembers));
+    categories = JSON.parse(JSON.stringify(fetchedCategories));
   } catch (err) {
     console.warn("Failed fetching team in dashboard:", err);
   }

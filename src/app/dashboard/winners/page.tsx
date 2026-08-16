@@ -22,8 +22,8 @@ export default async function DashboardWinnersPage() {
         orderBy: { title: "asc" },
       }),
     ]);
-    winners = fetchedWinners;
-    events = fetchedEvents;
+    winners = JSON.parse(JSON.stringify(fetchedWinners));
+    events = JSON.parse(JSON.stringify(fetchedEvents));
   } catch (err) {
     console.warn("Failed fetching winners in dashboard:", err);
   }

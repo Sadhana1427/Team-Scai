@@ -10,7 +10,7 @@ export default async function DashboardUsersPage() {
 
   let users: any[] = [];
   try {
-    users = await prisma.user.findMany({
+    const fetched = await prisma.user.findMany({
       select: {
         id: true,
         accountId: true,
@@ -22,6 +22,7 @@ export default async function DashboardUsersPage() {
       },
       orderBy: { accountId: "asc" },
     });
+    users = JSON.parse(JSON.stringify(fetched));
   } catch (err) {
     console.warn("Failed fetching users in dashboard:", err);
   }

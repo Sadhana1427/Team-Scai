@@ -10,9 +10,10 @@ export default async function DashboardCarouselPage() {
 
   let slides: any[] = [];
   try {
-    slides = await prisma.carouselItem.findMany({
+    const fetched = await prisma.carouselItem.findMany({
       orderBy: { displayOrder: "asc" },
     });
+    slides = JSON.parse(JSON.stringify(fetched));
   } catch (err) {
     console.warn("Failed fetching carousel in dashboard:", err);
   }

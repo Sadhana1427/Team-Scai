@@ -10,9 +10,12 @@ export default async function DashboardSettingsPage() {
 
   let settings = null;
   try {
-    settings = await prisma.siteSetting.findUnique({
+    const fetched = await prisma.siteSetting.findUnique({
       where: { id: "default" },
     });
+    if (fetched) {
+      settings = JSON.parse(JSON.stringify(fetched));
+    }
   } catch (err) {
     console.warn("Failed fetching site settings:", err);
   }
