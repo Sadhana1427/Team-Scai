@@ -9,7 +9,12 @@ export const metadata: Metadata = {
   keywords: ["Team SCAI", "Hackathons", "AI Events", "Workshops", "Tech Community", "Student Showcase"],
   authors: [{ name: "Team SCAI" }],
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [
+      { url: "/apple-icon" },
+    ],
   },
 };
 
