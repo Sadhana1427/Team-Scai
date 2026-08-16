@@ -1,0 +1,285 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  EVENT_LEADER
+  MANAGEMENT
+  SOCIAL_MEDIA
+}
+
+enum EventStatus {
+  UPCOMING
+  ONGOING
+  PAST
+}
+
+enum GalleryCategory {
+  EVENTS
+  WINNERS
+  TEAM
+}
+
+model User {
+  id           String        @id @default(uuid())
+  accountId    String        @unique // Human-readable e.g., EVT-0001
+  email        String        @unique
+  passwordHash String
+  name         String
+  role         Role          @default(MANAGEMENT)
+  isActive     Boolean       @default(true)
+  avatarUrl    String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  createdEvents   Event[]       @relation("CreatedByUser")
+  assignedEvents  Event[]       @relation("AssignedLeader")
+  auditLogs       AuditLog[]
+  uploadedDocs    EventDocument[]
+  uploadedImages  GalleryImage[]
+  notifications   Notification[] @relation("UserNotifications")
+
+  @@index([role])
+  @@index([isActive])
+}
+
+model EventCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  events      Event[]
+
+  @@index([slug])
+}
+
+model EventTag {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]  @relation("EventToTag")
+
+  @@index([slug])
+}
+
+model Event {
+  id                   String        @id @default(uuid())
+  title                String
+  slug                 String        @unique
+  shortDescription     String
+  fullDescription      String
+  posterUrl            String?
+  
+  categoryId           String
+  category             EventCategory @relation(fields: [categoryId], references: [id])
+  tags                 EventTag[]    @relation("EventToTag")
+
+  startDate            DateTime
+  endDate              DateTime
+  startTime            String        // e.g. "10:00 AM"
+  endTime              String        // e.g. "05:00 PM"
+  venue                String
+  
+  registrationUrl      String?
+  registrationDeadline DateTime?
+  
+  status               EventStatus   @default(UPCOMING)
+  isFeatured           Boolean       @default(false)
+  isVisible            Boolean       @default(true)
+
+  eventLeaderId        String?
+  eventLeader          User?         @relation("AssignedLeader", fields: [eventLeaderId], references: [id], onDelete: SetNull)
+
+  createdById          String
+  createdBy            User          @relation("CreatedByUser", fields: [createdById], references: [id])
+
+  documents            EventDocument[]
+  images               GalleryImage[]
+  winners              Winner[]
+
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  @@index([status, startDate])
+  @@index([slug])
+  @@index([categoryId])
+  @@index([isFeatured])
+  @@index([isVisible])
+}
+
+model EventDocument {
+  id           String   @id @default(uuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  title        String
+  fileUrl      String
+  fileType     String   // e.g. "application/pdf"
+  fileSize     Int      // in bytes
+  docType      String   // "Brochure", "Rules", "Guidelines", "Schedule", "Results", etc.
+  
+  uploadedById String
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([eventId])
+}
+
+model GalleryImage {
+  id           String          @id @default(uuid())
+  title        String?
+  url          String
+  thumbnailUrl String?
+  
+  eventId      String?
+  event        Event?          @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  
+  category     GalleryCategory @default(EVENTS)
+  year         Int             @default(2026)
+  isFeatured   Boolean         @default(false)
+  
+  uploadedById String
+  uploadedBy   User            @relation(fields: [uploadedById], references: [id])
+  
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([category, year])
+  @@index([eventId])
+  @@index([isFeatured])
+}
+
+model Winner {
+  id           String   @id @default(uuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  name         String
+  position     String   // "1st", "2nd", "3rd", "Winner", "Runner Up", "Special Mention"
+  photoUrl     String?
+  description  String?
+  isFeatured   Boolean  @default(false)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([eventId])
+  @@index([isFeatured])
+}
+
+model TeamCategory {
+  id           String       @id @default(uuid())
+  name         String       @unique // e.g. "Core Team", "Event Management", "Technical", "Social Media"
+  slug         String       @unique
+  displayOrder Int          @default(0)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  members      TeamMember[]
+
+  @@index([slug])
+  @@index([displayOrder])
+}
+
+model TeamMember {
+  id           String       @id @default(uuid())
+  name         String
+  photoUrl     String?
+  designation  String       // e.g. "President", "Lead Organizer", "Head of Tech"
+  categoryId   String
+  category     TeamCategory @relation(fields: [categoryId], references: [id])
+  description  String?
+  email        String?
+  linkedinUrl  String?
+  githubUrl    String?
+  twitterUrl   String?
+  displayOrder Int          @default(0)
+  isActive     Boolean      @default(true)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([categoryId])
+  @@index([isActive, displayOrder])
+}
+
+model CarouselItem {
+  id           String   @id @default(uuid())
+  heading      String
+  description  String
+  imageUrl     String
+  ctaText      String?
+  ctaLink      String?
+  isActive     Boolean  @default(true)
+  displayOrder Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([isActive, displayOrder])
+}
+
+model SiteSetting {
+  id            String   @id @default("default")
+  websiteName   String   @default("Team SCAI")
+  orgName       String   @default("Student Community for AI & Innovation")
+  logoUrl       String?
+  faviconUrl    String?
+  contactEmail  String   @default("contact@teamscai.org")
+  contactPhone  String?
+  instagramUrl  String?  @default("https://instagram.com/teamscai")
+  linkedinUrl   String?  @default("https://linkedin.com/company/teamscai")
+  githubUrl     String?  @default("https://github.com/teamscai")
+  twitterUrl    String?  @default("https://twitter.com/teamscai")
+  youtubeUrl    String?
+  address       String?  @default("Innovation & Technology Hub, Campus Block 4")
+  aboutShort    String?  @default("Empowering students through technology, hackathons, and creative innovation.")
+  aboutFull     String?  @default("Team SCAI is an organization dedicated to fostering talent in artificial intelligence, software engineering, robotics, and creative arts through high-impact workshops, flagship hackathons, and community mentorship.")
+  footerText    String?  @default("© 2026 Team SCAI. All rights reserved.")
+  updatedAt     DateTime @updatedAt
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action      String   // e.g. "USER_CREATED", "EVENT_UPDATED", etc.
+  entity      String   // e.g. "Event", "User", "Gallery"
+  entityId    String?
+  description String
+  metadata    String?  // JSON stringified details
+  ipAddress   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+}
+
+model Notification {
+  id           String    @id @default(uuid())
+  title        String
+  message      String
+  type         String    @default("SYSTEM") // "EVENT", "USER", "MEDIA", "SYSTEM"
+  link         String?
+  isRead       Boolean   @default(false)
+  
+  targetUserId String?
+  targetUser   User?     @relation("UserNotifications", fields: [targetUserId], references: [id], onDelete: Cascade)
+  targetRole   Role?
+  
+  createdAt    DateTime  @default(now())
+
+  @@index([targetUserId, isRead])
+  @@index([targetRole])
+  @@index([createdAt])
+}
